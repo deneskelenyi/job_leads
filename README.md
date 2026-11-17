@@ -135,7 +135,9 @@ After changing scoring keywords or weights, re-score stored rows:
 
 The UI lives at `/`; JSON at the endpoints above. Drafts are grounded in
 data/profile.md only — the LLM is instructed never to invent employers,
-skills, or dates. Review before sending anything.
+skills, or dates. Letters are post-processed into clean paragraphs
+(humanizer style rules + normalization), and review before sending
+anything.
 
 ## Run as a service
 
