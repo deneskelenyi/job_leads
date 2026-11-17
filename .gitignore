@@ -1,0 +1,11 @@
+# secrets — never commit
+.env
+data/
+upwork_tokens.json
+
+# runtime / build artifacts
+venv/
+__pycache__/
+*.pyc
+*.log
+*.bak

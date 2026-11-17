@@ -1,0 +1,16 @@
+[Unit]
+Description=Job-search monitor (FastAPI) — polls remote-job feeds, scores, alerts
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=dindi
+Group=dindi
+WorkingDirectory=/home/dindi/job-search
+ExecStart=/home/dindi/job-search/venv/bin/uvicorn app.main:app --host 192.168.9.38 --port 8790
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,119 @@
+# Job-search monitor configuration
+# Edit freely — the service reads this at startup.
+
+poll_minutes: 30
+alert_min_score: 40        # jobs scoring below this are stored but not alerted
+alert_max_messages: 15     # per-tick cap on individual Telegram messages
+
+api:
+  host: "192.168.9.38"
+  port: 8790
+
+telegram:
+  enabled: false           # flip to true once bot_token and chat_id are filled
+  bot_token: ""            # from your Telegram bot (BotFather) — same one content_bot uses
+  chat_id: ""              # your personal chat id
+
+llm:
+  enabled: true
+  base_url: "http://127.0.0.1:4000/v1"   # any OpenAI-compatible gateway (env: LITELLM_BASE_URL)
+  api_key: ""                            # set via .env → LITELLM_API_KEY
+  model: "glm-5.3-flash"                 # env: LLM_MODEL
+  max_tokens: 3000
+  # profile for letter drafting: copy profile.example.md → data/profile.md
+  # and fill in YOUR background (data/ is gitignored)
+
+sources:
+  remotive:
+    enabled: true
+    url: "https://remotive.com/api/remote-jobs?category=software-dev&limit=100"
+  remoteok:
+    enabled: true
+    url: "https://remoteok.com/api"
+  wwr:
+    enabled: true
+    urls:
+      - "https://weworkremotely.com/categories/remote-programming-jobs.rss"
+      - "https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss"
+  himalayas:
+    enabled: true
+    url: "https://himalayas.app/jobs/api?limit=100"
+  jobicy:
+    enabled: true
+    url: "https://jobicy.com/api/v2/remote-jobs?count=100"
+  hn_freelancer:
+    enabled: true
+    # Monthly "Ask HN: Freelancer? Seeking freelancer?" thread via Algolia API
+  hn_hiring:
+    enabled: true
+    # Monthly "Ask HN: Who is hiring?" thread via Algolia API — the big
+    # employer-side thread; every comment is a posting
+  python_jobs:
+    enabled: true
+    url: "https://www.python.org/jobs/feed/rss/"
+  django_jobs:
+    enabled: true
+    url: "https://djangojobs.net/feed.xml"
+  upwork_mcp:
+    enabled: true
+    every_minutes: 720          # 2 polls/day; Upwork blesses scheduled
+                                # read-only searches — searches are free,
+                                # Connects only apply to proposals
+    queries:                     # rotated pool — queries_per_poll per poll,
+      - "python automation"      # so each query runs ~1x/day at 6 searches/day
+      - "django fastapi scraping llm"
+      - "linux server admin"
+      - "nginx server fix"
+      - "qemu lxc proxmox vps"
+      - "sysadmin ubuntu debian"
+    queries_per_poll: 3
+    max_results: 25
+    alert_min_score: 25         # per-source floor: Upwork queries are precise,
+                                # so server-fix gigs with 1-2 ops terms alert
+
+scoring:
+  # Core skill matches (+8 each)
+  strong:
+    [python, django, fastapi, scraping, scraper, playwright, selenium,
+     automation, llm, gpt, agentic, agent, mcp, claude, openai, whatsapp,
+     telegram, devops, linux, docker, postgres, postgresql, mysql, mariadb,
+     sql, api, rest, integration, workflow, n8n, zapier, backend, pipeline,
+     etl, infrastructure, infra, nginx, apache, rabbitmq, kubernetes,
+     virtualization, "data platform", microservice, chatgpt, chatbot,
+     server, ubuntu, debian, cloudflare, dns, ssh, ssl, firewall, backup,
+     migration, troubleshooting, "server setup"]
+  # Server-ops specials (+16 each) — sysadmin / hosting / virtualization
+  # work: high-precision, each term alone is a strong lead signal
+  ops_core:
+    [sysadmin, "server admin", "system administration", qemu, lxc, kvm,
+     proxmox, vps, hypervisor, "email deliverability", postfix, smtp,
+     cpanel, plesk, "server fix", "linux server", "server issue",
+     "server error"]
+  # "Quick prototype with AI assistance" signals (+6 each)
+  prototype:
+    [prototype, mvp, quick, "small project", "one-off", one-off, automation,
+     bot, scraper, scraping, n8n, zapier, "make.com", workflow, telegram,
+     whatsapp, chatbot, parsing, parser, "data extraction", integration,
+     mcp, agent, llm, "no-code", low-code, "workflow automation",
+     "server fix", "quick fix", urgent, "small task", "one time",
+     "server setup", configure, install]
+  # Deprioritize — stacks you don't want to chase
+  negative:
+    [rust, golang, unity, unreal, flutter, "react native", swift, kotlin,
+     figma, designer, "wordpress theme", "spring boot", "java 17",
+     "senior java", solidity, "web3", "game engine"]
+  # Location / work-mode signals
+  location_good:
+    [remote, anywhere, global, worldwide, latam, "latin america",
+     asynchronous, async, "costa rica"]
+  location_bad:
+    ["us only", "u.s. only", "north america only", "usa only", cet, cest,
+     "europe timezone", "european time", "berlin", "london", "overlap with"]
+
+weights:
+  strong: 8
+  ops_core: 16
+  prototype: 6
+  negative: -10
+  location_good: 4
+  location_bad: -6
