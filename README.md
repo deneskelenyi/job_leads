@@ -70,6 +70,36 @@ Create a bot with @BotFather, then in .env:
 
 and set `telegram.enabled: true` in config.yaml.
 
+## Make it yours (config.yaml)
+
+Everything is one YAML file, `config.yaml`. Every source is one flag —
+your friend who doesn't want Django jobs turns it off like this:
+
+    sources:
+      django_jobs:
+        enabled: false      # was true — delete the url line or keep it, ignored
+
+Any subset works — a pure Upwork monitor (`enabled: false` on everything
+except `upwork_mcp`), a feeds-only setup (no Upwork login at all), or all
+ten. Restart the app to apply: `systemctl restart job-search` (or Ctrl-C +
+rerun uvicorn).
+
+Other things you'll likely want to change before first run:
+
+- `scoring.strong` / `ops_core` / `prototype` / `negative` — the keyword
+  groups scored against every posting. Delete what isn't you (not a Django
+  dev? remove `django`; not a sysadmin? drop the whole `ops_core` list),
+  add your own tools and domains. `weights` sets points per hit.
+- `alert_min_score` — the global alert floor (40). Per-source floors are set
+  on the source block (Upwork ships with 25 because its queries are precise).
+- `upwork_mcp.queries` — the rotated search pool; put YOUR skills in it.
+- `poll_minutes` — feed poll interval (30 by default; sources can override
+  with their own `every_minutes`, like Upwork's 720).
+
+After changing scoring keywords or weights, re-score what's already stored:
+
+    ./venv/bin/python rescore.py
+
 ## Configuration (config.yaml)
 
 Everything tunable, no code edits needed:
