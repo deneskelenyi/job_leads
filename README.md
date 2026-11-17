@@ -101,6 +101,7 @@ After changing scoring keywords or weights, re-score stored rows:
     curl 'localhost:8790/digest?hours=24'
     curl -X POST localhost:8790/jobs/<source>/<id>/draft    # LLM letter draft
     curl localhost:8790/jobs/<source>/<id>/draft           # saved draft
+    curl -O -J 'localhost:8790/job/<source>/<id>/draft.docx'  # download .docx
 
 The UI lives at `/`; JSON at the endpoints above. Drafts are grounded in
 data/profile.md only — the LLM is instructed never to invent employers,

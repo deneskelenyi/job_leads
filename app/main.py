@@ -16,10 +16,10 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 
 import httpx
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.responses import HTMLResponse
 
-from . import notify, scoring, store, ui
+from . import docx, notify, scoring, store, ui
 from .config import load_config
 from .llm import draft_letter
 from .sources import FETCHERS
@@ -214,6 +214,26 @@ async def home(min_score: str = Query(default=""),
     params = {"min_score": mscore, "limit": lim,
               "hours": hours, "source": source}
     return HTMLResponse(ui.listings_page(found, params, _html_status()))
+
+
+@app.get("/job/{source}/{external_id:path}/draft.docx")
+async def draft_docx(source: str, external_id: str):
+    """Download the saved letter as a .docx (declare BEFORE the catch-all
+    detail route so the more specific pattern wins)."""
+    j = store.get_job(source, external_id)
+    if not j:
+        raise HTTPException(404, "job not found")
+    draft = store.get_draft(source, external_id)
+    if not draft:
+        raise HTTPException(404, "no draft yet — generate one first")
+    data = docx.build_letter_docx(draft, j.get("title", ""),
+                                  j.get("company", ""), j.get("url", ""))
+    fname = docx.letter_filename(j.get("title", ""), j.get("company", ""))
+    return Response(
+        content=data,
+        media_type=("application/vnd.openxmlformats-officedocument"
+                    ".wordprocessingml.document"),
+        headers={"Content-Disposition": f'attachment; filename="{fname}"'})
 
 
 @app.get("/job/{source}/{external_id:path}", response_class=HTMLResponse)

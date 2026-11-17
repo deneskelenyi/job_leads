@@ -119,7 +119,8 @@ def job_page(job: dict, draft: str | None, note: str | None = None) -> str:
         draft_html = f"""<h2>Draft letter (review before sending)</h2>
 <form method="post" action="/job/{_esc(job["source"])}/{_q(job["external_id"])}/draft">
 <textarea class="draft" name="drafttext" readonly>{_esc(draft)}</textarea>
-<button>regenerate</button></form>"""
+<button>regenerate</button></form>
+<p><a href="/job/{_esc(job["source"])}/{_q(job["external_id"])}/draft.docx">&#11015; download as .docx</a></p>"""
     else:
         draft_html = f"""<form method="post" action="/job/{_esc(job["source"])}/{_q(job["external_id"])}/draft">
 <button>✍️ draft application letter</button>
