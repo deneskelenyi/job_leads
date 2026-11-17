@@ -68,6 +68,24 @@ async def _chat(llm_cfg: dict, prompt: str, max_tokens: int) -> tuple[str, str |
 _CLOSING = re.compile(
     r"^(kind regards|best regards|warm regards|regards|sincerely|thank you)[,!.\s]*$",
     re.I)
+_GLUE = re.compile(
+    r"^(kind regards|best regards|warm regards|regards|sincerely|thank you)"
+    r"[,!]?\s*", re.I)
+
+
+def _split_glued_closing(lines: list[str]) -> list[str]:
+    """Models sometimes emit 'Kind regards,Denes Kelenyi' on one line —
+    split into closing line + name line so the signature block matches."""
+    out = []
+    for ln in lines:
+        s = ln.strip()
+        m = _GLUE.match(s)
+        if m and m.end() < len(s):
+            out.append(s[:m.end()].rstrip())
+            out.append(s[m.end():].strip())
+        else:
+            out.append(ln)
+    return out
 
 
 def normalize_letter(text: str) -> str:
@@ -79,6 +97,7 @@ def normalize_letter(text: str) -> str:
     """
     text = (text or "").replace("\r\n", "\n").replace("\r", "\n").strip()
     lines = [ln.rstrip() for ln in text.split("\n")]
+    lines = _split_glued_closing(lines)
 
     # signature: from the first closing line to the end, one block
     sig = None
