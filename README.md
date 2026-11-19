@@ -139,6 +139,23 @@ skills, or dates. Letters are post-processed into clean paragraphs
 (humanizer style rules + normalization), and review before sending
 anything.
 
+## How it runs (no cron)
+
+systemd keeps the uvicorn process alive; inside the process a background
+asyncio loop does all the polling:
+
+    boot → systemd starts uvicorn → lifespan() starts poller_loop()
+         → tick immediately → sleep(poll_minutes) → repeat
+
+Each tick: per-source schedule gates → fetch all enabled sources
+concurrently (one failing source never sinks the tick) → keyword scoring →
+SQLite dedupe (source + external_id) → alerts for scores above their floor
+(global alert_min_score, per-source override) → digest file always,
+Telegram when enabled. A failing source retries next tick (about an hour
+backoff for gated sources like Upwork's 12h cadence). Drafts are generated
+on demand, not by the loop. One process is both the web server and the
+poller.
+
 ## Run as a service
 
 A systemd unit file is included (`job-search.service`). Install it, and put
