@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 import threading
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,71 @@ from .config import DATA_DIR
 DB_PATH = DATA_DIR / "jobs.db"
 _lock = threading.Lock()
 _conn: sqlite3.Connection | None = None
+
+_REL_NOW = re.compile(r"^now\s*[-+]\s*(\d+)\s*([smhdw])", re.I)
+_AGO = re.compile(r"^(\d+)\s*(second|minute|hour|day|week)s?\s*ago", re.I)
+
+
+def normalize_published(raw: Any, reference: datetime | None = None) -> str:
+    """Normalize any job-board date dialect to ISO 8601 UTC ('' if hopeless).
+
+    Handles unix epochs (seconds/ms), ISO 8601, RFC822 (2- and 4-digit
+    years), 'YYYY-MM-DD[ HH:MM:SS]', and relatives like 'now-5h',
+    'now - 5 hours', '3 hours ago', 'today', 'yesterday'. Relatives are
+    computed against `reference` (backfills pass the row's inserted_at)."""
+    now = reference or datetime.now(timezone.utc)
+    if raw is None:
+        return ""
+    if isinstance(raw, (int, float)) and not isinstance(raw, bool):
+        ts = float(raw)
+        if ts > 1e12:  # milliseconds
+            ts /= 1000.0
+        if 1e9 < ts < 4.1e9:  # plausible epoch seconds (2001..2100)
+            return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat(
+                timespec="seconds")
+        return ""
+    s = str(raw).strip()
+    if not s:
+        return ""
+    if re.fullmatch(r"\d{10,14}", s):
+        # epoch stored as text (some boards send it stringified)
+        return normalize_published(int(s), reference)
+    low = s.lower()
+    m = _REL_NOW.match(low)
+    if m:
+        n, unit = int(m.group(1)), m.group(2).lower()
+        delta = {"s": timedelta(seconds=n), "m": timedelta(minutes=n),
+                 "h": timedelta(hours=n), "d": timedelta(days=n),
+                 "w": timedelta(weeks=n)}[unit]
+        return (now - delta).isoformat(timespec="seconds")
+    if low in ("now", "today"):
+        return now.isoformat(timespec="seconds")
+    if low == "yesterday":
+        return (now - timedelta(days=1)).isoformat(timespec="seconds")
+    m = _AGO.match(low)
+    if m:
+        n = int(m.group(1))
+        mult = {"second": timedelta(seconds=1), "minute": timedelta(minutes=1),
+                "hour": timedelta(hours=1), "day": timedelta(days=1),
+                "week": timedelta(weeks=1)}[m.group(2).lower()]
+        return (now - n * mult).isoformat(timespec="seconds")
+    for fmt in ("%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%dT%H:%M:%S%z",
+                "%a, %d %b %Y %H:%M:%S %z", "%a, %d %b %y %H:%M:%S %z",
+                "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            dt = datetime.strptime(s, fmt)
+        except ValueError:
+            continue
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc).isoformat(timespec="seconds")
+    try:
+        dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc).isoformat(timespec="seconds")
+    except ValueError:
+        return ""
 
 
 def init() -> None:
@@ -54,7 +120,8 @@ def insert_new(job: dict) -> bool:
             "INSERT OR IGNORE INTO jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (job["source"], job["external_id"], job.get("title", ""),
              job.get("company", ""), job.get("url", ""), job.get("location", ""),
-             job.get("salary", ""), job.get("published", ""),
+             job.get("salary", ""),
+             normalize_published(job.get("published", "")),
              (job.get("description") or "")[:4000], int(job.get("score", 0)),
              int(job.get("prototype_fit", 0)),
              json.dumps(job.get("matched", {})), _now()))

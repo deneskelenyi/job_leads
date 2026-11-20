@@ -201,11 +201,15 @@ async def _fetch_rss(client: httpx.AsyncClient, url: str, source: str) -> list[d
         company = ""
         if " at " in title:
             company = title.split(" at ")[-1].strip()[:60]
+        published = (item.findtext("pubDate") or item.findtext("published")
+                     or item.findtext("updated")
+                     or item.findtext("{http://purl.org/dc/elements/1.1/}date")
+                     or "")
         out.append({
             "source": source, "external_id": guid,
             "title": title, "company": company, "url": link,
             "location": "", "salary": "",
-            "published": item.findtext("pubDate"),
+            "published": published,
             "description": _trim(desc),
         })
     return out
