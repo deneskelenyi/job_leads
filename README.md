@@ -92,6 +92,9 @@ Other things you'll likely want to change before first run:
   add your own tools and domains. `weights` sets points per hit.
 - `alert_min_score` — the global alert floor (40). Per-source floors are set
   on the source block (Upwork ships with 25 because its queries are precise).
+- `scoring.exclude` / `exclude_desc` — hard exclusions: matching jobs are
+  never stored (e.g. a location of `india`; description phrases must be
+  role-anchored and word-bounded, or "based in Indiana" false-fires).
 - `upwork_mcp.queries` — the rotated search pool; put YOUR skills in it.
 - `poll_minutes` — feed poll interval (30 by default; sources can override
   with their own `every_minutes`, like Upwork's 720).

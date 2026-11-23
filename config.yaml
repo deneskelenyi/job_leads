@@ -109,6 +109,16 @@ scoring:
   location_bad:
     ["us only", "u.s. only", "north america only", "usa only", cet, cest,
      "europe timezone", "european time", "berlin", "london", "overlap with"]
+  # Hard exclusions — matching jobs are never stored at all
+  exclude:              # checked against title + location (whole-word)
+    [india]
+  exclude_desc:          # description phrases, word-bounded — keep them
+    ["based in india",   # role-anchored; bare country mentions are usually
+     "india only",       # global companies, and 'india' alone would false-
+     "located in india", # fire on Indiana/Indianapolis
+     "candidates in india",
+     "work from india",
+     "india standard time"]
 
 weights:
   strong: 8

@@ -66,6 +66,8 @@ async def run_tick() -> dict:
                     jobs = await FETCHERS[name](client, src_cfg)
                     for j in jobs:
                         scored = scoring.score_job(j, scoring_cfg, weights)
+                        if scoring.is_excluded(scored, scoring_cfg):
+                            continue
                         if store.insert_new(scored):
                             new_jobs.append(scored)
                     results[name] = f"ok ({len(jobs)} jobs)"
