@@ -180,6 +180,8 @@ secrets in a drop-in rather than the unit file:
     app/config.py      .env + config.yaml loading (env wins)
     upwork_login.py    one-time interactive OAuth for your Upwork account
     rescore.py         re-score stored rows after keyword/weight changes
+    normalize_dates.py re-normalize stored published dates to ISO 8601 UTC
+    purge_excluded.py  delete stored rows matching the exclusion rules
     profile.example.md template for your data/profile.md
     .env.example       credential reference
 
