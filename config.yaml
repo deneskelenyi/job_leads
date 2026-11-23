@@ -104,11 +104,16 @@ scoring:
      "senior java", solidity, "web3", "game engine"]
   # Location / work-mode signals
   location_good:
-    [remote, anywhere, global, worldwide, latam, "latin america",
-     asynchronous, async, "costa rica"]
+    [remote, anywhere, global, worldwide, asynchronous, async]
   location_bad:
     ["us only", "u.s. only", "north america only", "usa only", cet, cest,
      "europe timezone", "european time", "berlin", "london", "overlap with"]
+  # Costa Rica / LatAm eligibility — ranks jobs the owner can actually
+  # take (CR resident, UTC-6) well above generic remote listings:
+  # "Remote — Costa Rica" nets +14 (location_good 4 + this 10) vs +4 for
+  # plain "remote"
+  location_cr:
+    ["costa rica", "latin america", "latam", "americas"]
   # Hard exclusions — matching jobs are never stored at all
   exclude:              # checked against title + location (whole-word)
     [india]
@@ -126,4 +131,5 @@ weights:
   prototype: 6
   negative: -10
   location_good: 4
+  location_cr: 10
   location_bad: -6

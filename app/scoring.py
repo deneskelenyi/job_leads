@@ -2,7 +2,9 @@
 
 Groups: strong (core skills, +8), ops_core (server-ops specials, +16 —
 high-precision terms for sysadmin/hosting/QEMU-LXC work), prototype
-(quick-gig signals, +6), negative (-10), location_good/bad (+4/-6).
+(quick-gig signals, +6), negative (-10), location_good/bad (+4/-6),
+location_cr (Costa Rica / LatAm eligibility, +10 — jobs the owner can
+actually take rank above generic remote ones).
 A job with zero strong AND zero ops_core matches is capped at 10 so
 buzzword-only noise cannot alert.
 """
@@ -11,7 +13,7 @@ from __future__ import annotations
 import re
 
 GROUPS = ("strong", "ops_core", "prototype", "negative",
-          "location_good", "location_bad")
+          "location_good", "location_bad", "location_cr")
 
 
 def is_excluded(job: dict, scoring_cfg: dict) -> bool:
